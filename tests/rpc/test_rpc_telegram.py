@@ -72,7 +72,7 @@ def test_init(default_conf, mocker, caplog) -> None:
     assert start_polling.start_polling.call_count == 1
 
     message_str = ("rpc.telegram is listening for following commands: [['status'], ['profit'], "
-                   "['balance'], ['start'], ['stop'], ['forcesell'], ['forcebuy'], "
+                   "['balance'], ['start'], ['stop'], ['forcesell'], ['forcebuy'], ['executebuy'], "
                    "['performance'], ['daily'], ['count'], ['reload_config', 'reload_conf'], "
                    "['show_config', 'show_conf'], ['stopbuy'], ['whitelist'], ['blacklist'], "
                    "['edge'], ['help'], ['version']]")
@@ -947,6 +947,69 @@ def test_forcebuy_handle_exception(default_conf, update, markets, mocker) -> Non
 
     update.message.text = '/forcebuy ETH/Nonepair'
     telegram._forcebuy(update=update, context=MagicMock())
+
+    assert rpc_mock.call_count == 1
+    assert rpc_mock.call_args_list[0][0][0] == 'Forcebuy not enabled.'
+
+
+def test_executebuy_handle(default_conf, update, markets, mocker) -> None:
+    mocker.patch('freqtrade.rpc.rpc.CryptoToFiatConverter._find_price', return_value=15000.0)
+    mocker.patch('freqtrade.rpc.telegram.Telegram._send_msg', MagicMock())
+    mocker.patch('freqtrade.rpc.telegram.Telegram._init', MagicMock())
+    patch_exchange(mocker)
+    mocker.patch.multiple(
+        'freqtrade.exchange.Exchange',
+        markets=PropertyMock(markets),
+        )
+    ebuy_mock = MagicMock(return_value=None)
+    mocker.patch('freqtrade.rpc.RPC._rpc_executebuy', ebuy_mock)
+
+    freqtradebot = FreqtradeBot(default_conf)
+    patch_get_signal(freqtradebot, (True, False))
+    telegram = Telegram(freqtradebot)
+
+    # /executebuy ETH/BTC
+    context = MagicMock()
+    context.args = ["ETH/BTC", "0.1"]
+    telegram._executebuy(update=update, context=context)
+
+    assert ebuy_mock.call_count == 1
+    assert ebuy_mock.call_args_list[0][0][0] == 'ETH/BTC'
+    assert isinstance(ebuy_mock.call_args_list[0][0][1], float)
+    assert ebuy_mock.call_args_list[0][0][1] == 0.1
+    assert ebuy_mock.call_args_list[0][0][2] is None
+
+    # Reset and retry with specified price
+    ebuy_mock = MagicMock(return_value=None)
+    mocker.patch('freqtrade.rpc.RPC._rpc_executebuy', ebuy_mock)
+    # /executebuy ETH/BTC 0.1 0.055
+    context = MagicMock()
+    context.args = ["ETH/BTC", "0.1", "0.055"]
+    telegram._executebuy(update=update, context=context)
+
+    assert ebuy_mock.call_count == 1
+    assert ebuy_mock.call_args_list[0][0][0] == 'ETH/BTC'
+    assert isinstance(ebuy_mock.call_args_list[0][0][1], float)
+    assert ebuy_mock.call_args_list[0][0][1] == 0.1
+    assert isinstance(ebuy_mock.call_args_list[0][0][2], float)
+    assert ebuy_mock.call_args_list[0][0][2] == 0.055
+
+
+def test_executebuy_handle_exception(default_conf, update, markets, mocker) -> None:
+    mocker.patch('freqtrade.rpc.rpc.CryptoToFiatConverter._find_price', return_value=15000.0)
+    rpc_mock = mocker.patch('freqtrade.rpc.telegram.Telegram._send_msg', MagicMock())
+    mocker.patch('freqtrade.rpc.telegram.Telegram._init', MagicMock())
+    patch_exchange(mocker)
+    mocker.patch.multiple(
+        'freqtrade.exchange.Exchange',
+        markets=PropertyMock(markets),
+    )
+    freqtradebot = FreqtradeBot(default_conf)
+    patch_get_signal(freqtradebot, (True, False))
+    telegram = Telegram(freqtradebot)
+
+    update.message.text = '/executebuy ETH/Nonepair 0.1'
+    telegram._executebuy(update=update, context=MagicMock())
 
     assert rpc_mock.call_count == 1
     assert rpc_mock.call_args_list[0][0][0] == 'Forcebuy not enabled.'
