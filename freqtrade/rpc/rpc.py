@@ -525,6 +525,37 @@ class RPC:
         else:
             return None
 
+    def _rpc_executebuy(self, pair: str, stake_amount: float, price: Optional[float]) -> Optional[Trade]:
+        """
+        Handler for executebuy <asset> <stake_amount> <price>
+        Buys a pair trade with given stake amount at the given or current price
+        """
+
+        if not self._freqtrade.config.get('forcebuy_enable', False):
+            raise RPCException('Forcebuy not enabled.')
+
+        if self._freqtrade.state != State.RUNNING:
+            raise RPCException('trader is not running')
+
+        # Check if pair quote currency equals to the stake currency.
+        stake_currency = self._freqtrade.config.get('stake_currency')
+        if not self._freqtrade.exchange.get_pair_quote_currency(pair) == stake_currency:
+            raise RPCException(
+                f'Wrong pair selected. Please pairs with stake {stake_currency} pairs only')
+        # check if valid pair
+
+        # check if pair already has an open pair
+        trade = Trade.get_trades([Trade.is_open.is_(True), Trade.pair == pair]).first()
+        if trade:
+            raise RPCException(f'position for {pair} already open - id: {trade.id}')
+
+        # execute buy
+        if self._freqtrade.execute_buy(pair, stake_amount, price):
+            trade = Trade.get_trades([Trade.is_open.is_(True), Trade.pair == pair]).first()
+            return trade
+        else:
+            return None
+
     def _rpc_performance(self) -> List[Dict[str, Any]]:
         """
         Handler for performance.

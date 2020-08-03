@@ -61,6 +61,7 @@ official commands. You can ask at any moment for help with `/help`.
 | `/forcesell <trade_id>` | | Instantly sells the given trade  (Ignoring `minimum_roi`).
 | `/forcesell all` | | Instantly sells all open trades (Ignoring `minimum_roi`).
 | `/forcebuy <pair> [rate]` | | Instantly buys the given pair. Rate is optional. (`forcebuy_enable` must be set to True)
+| `/executebuy <pair> <stake_amount> [rate]` | | Instantly buys the given pair with given stake amount. Rate is optional. (`forcebuy_enable` must be set to True)
 | `/performance` | | Show performance of each finished trade grouped by pair
 | `/balance` | | Show account balance per currency
 | `/daily <n>` | 7 | Shows profit or loss per day, over the last n days
@@ -151,6 +152,14 @@ Return a summary of your profit/loss and performance.
 > **BITTREX:** Selling BTC/LTC with limit `0.01650000 (profit: ~-4.07%, -0.00008168)`
 
 ### /forcebuy <pair>
+
+> **BITTREX:** Buying ETH/BTC with limit `0.03400000` (`1.000000 ETH`, `225.290 USD`)
+
+Note that for this to work, `forcebuy_enable` needs to be set to true.
+
+[More details](configuration.md/#understand-forcebuy_enable)
+
+### /executebuy <pair> <stake_amount>
 
 > **BITTREX:** Buying ETH/BTC with limit `0.03400000` (`1.000000 ETH`, `225.290 USD`)
 

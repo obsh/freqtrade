@@ -254,9 +254,9 @@ If the value is `stopped` the bot has to be started with `/start` first.
 
 ### Understand forcebuy_enable
 
-The `forcebuy_enable` configuration parameter enables the usage of forcebuy commands via Telegram.
+The `forcebuy_enable` configuration parameter enables the usage of forcebuy and executebuy commands via Telegram.
 This is disabled for security reasons by default, and will show a warning message on startup if enabled.
-For example, you can send `/forcebuy ETH/BTC` Telegram command when this feature if enabled to the bot,
+For example, you can send `/forcebuy ETH/BTC` or `/executebuy ETH/BTC 0.01` Telegram command when this feature if enabled to the bot,
 who then buys the pair and holds it until a regular sell-signal (ROI, stoploss, /forcesell) appears.
 
 This can be dangerous with some strategies, so use with care.
